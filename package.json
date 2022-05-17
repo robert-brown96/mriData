@@ -1,0 +1,19 @@
+{
+  "name": "mridata",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robert-brown96/mriData.git"
+  },
+  "author": "Bobby Brown",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/robert-brown96/mriData/issues"
+  },
+  "homepage": "https://github.com/robert-brown96/mriData#readme"
+}
