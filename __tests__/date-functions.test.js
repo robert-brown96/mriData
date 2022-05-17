@@ -63,15 +63,6 @@ describe("Billing Start Date: Test for Biannual Billing", () => {
         const new_start = calc_bill_start_date(input);
         expect(new_start).toEqual(input.sf_next_ann);
     });
-    test("Billing Start Date: Pass Set Biannual Billing Start Date mid month", () => {
-        const input = {
-            charge_schedule: "Biannual",
-            sf_next_ann: "10/8/2022"
-        };
-
-        const new_start = calc_bill_start_date(input);
-        expect(new_start).toEqual(input.sf_next_ann);
-    });
     test("Billing Start Date: Pass Set Annual Billing Start Date before go live", () => {
         const input = {
             charge_schedule: "Biannual",
@@ -81,6 +72,113 @@ describe("Billing Start Date: Test for Biannual Billing", () => {
         const new_start = calc_bill_start_date(input);
         expect(new Date(new_start)).toEqual(
             add(new Date(input.sf_next_ann), { months: 6 })
+        );
+    });
+    test("Billing Start Date: Pass Set Biannual Billing Start Date Next Ann is more than 6 months out", () => {
+        const input = {
+            charge_schedule: "Biannual",
+            sf_next_ann: "5/1/2023"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new_start).toEqual(
+            sub(new Date(input.sf_next_ann), { months: 6 })
+        );
+    });
+    test("Billing Start Date: Pass Set Biannual Billing Start Date Next Ann is less than 6 months out", () => {
+        const input = {
+            charge_schedule: "Biannual",
+            sf_next_ann: "12/8/2022"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new Date(new_start)).toEqual(new Date(input.sf_next_ann));
+    });
+});
+
+describe("Billing Start Date: Test for Monthly Billing", () => {
+    test("Billing Start Date: Pass Set Monthly Billing Start Date on first of month", () => {
+        const input = {
+            charge_schedule: "Monthly",
+            sf_next_ann: "10/1/2022"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new_start).toEqual(new Date("7/1/2022"));
+    });
+    test("Billing Start Date: Pass Set Monthly Billing Start Date mid month", () => {
+        const input = {
+            charge_schedule: "Monthly",
+            sf_next_ann: "10/8/2022"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new_start.getMonth()).toBe(new Date(GLD).getMonth());
+        expect(new_start.getDate()).toBe(new Date(input.sf_next_ann).getDate());
+    });
+});
+
+describe("Billing Start Date: Test for Quarterly Billing", () => {
+    test("Billing Start Date: Pass Set Quarterly Billing Next Ann is equal to Go Live Date", () => {
+        const input = {
+            charge_schedule: "Quarterly",
+            sf_next_ann: "10/1/2022"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new_start).toEqual(input.sf_next_ann);
+    });
+    test("Billing Start Date: Pass Set Quarterly Billing Start Date before go live", () => {
+        const input = {
+            charge_schedule: "Quarterly",
+            sf_next_ann: "7/8/2022"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new Date(new_start)).toEqual(
+            add(new Date(input.sf_next_ann), { months: 3 })
+        );
+    });
+    test("Billing Start Date: Pass Set Quarterly Billing Start Date Next Ann is 0 - 3 Months Out", () => {
+        const input = {
+            charge_schedule: "Quarterly",
+            sf_next_ann: "11/1/2022"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new_start).toEqual(input.sf_next_ann);
+    });
+    test("Billing Start Date: Pass Set Quarterly Billing Start Date Next Ann is 3 - 6 months out", () => {
+        const input = {
+            charge_schedule: "Quarterly",
+            sf_next_ann: "1/1/2023"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new Date(new_start)).toEqual(
+            sub(new Date(input.sf_next_ann), { months: 3 })
+        );
+    });
+    test("Billing Start Date: Pass Set Quarterly Billing Start Date Next Ann is 6 - 9 months out", () => {
+        const input = {
+            charge_schedule: "Quarterly",
+            sf_next_ann: "4/1/2023"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new Date(new_start)).toEqual(
+            sub(new Date(input.sf_next_ann), { months: 6 })
+        );
+    });
+    test("Billing Start Date: Pass Set Quarterly Billing Start Date Next Ann is 9 - 12 months out", () => {
+        const input = {
+            charge_schedule: "Quarterly",
+            sf_next_ann: "8/1/2023"
+        };
+
+        const new_start = calc_bill_start_date(input);
+        expect(new Date(new_start)).toEqual(
+            sub(new Date(input.sf_next_ann), { months: 9 })
         );
     });
 });
