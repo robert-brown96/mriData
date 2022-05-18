@@ -12,7 +12,7 @@ const {
 require("dotenv").config();
 const GLD = process.env.GO_LIVE_DATE;
 
-const { calc_bill_start_date } = require("../lib/dates/billing-start");
+const { calc_bill_start_date } = require("../lib/date-functions");
 
 describe("Test Calculating 90 Days in Advance", () => {
     test("Add 3 Months to Go Live Date", () => {
