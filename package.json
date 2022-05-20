@@ -2,7 +2,7 @@
   "name": "mridata",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "playground.js",
   "scripts": {
     "test": "jest"
   },

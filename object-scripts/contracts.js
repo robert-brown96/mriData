@@ -60,7 +60,7 @@ const contractQl = `SELECT
                     WHERE
                         cc. "Id" NOT IN(
                             SELECT
-                                sf_id FROM trans_subscriptions)
+                                sf_id FROM trans_subscriptions) AND cc."Id" = 'a3E6S00001KuKRoUAN'
                     LIMIT 10000;`;
 
 const arrQl = `SELECT
@@ -109,7 +109,7 @@ const locationLookup = async ({ sf_loc, arr_table, cc_id, subsid }) => {
         const arr_data = arr_table.filter(obj => obj.cc_id === cc_id);
 
         const max = _.maxBy(arr_data, obj => obj.mrr);
-        if (max && max.mrr > 0) return max.location;
+        if ((max && max.mrr > 0) || arr_data.length === 1) return max.location;
 
         const rhr = _.find(arr_data, ["location", "US-RHR"]);
         const res_check = _.find(arr_data, ["location", "US-Resident Check"]);
@@ -183,7 +183,7 @@ const transformFunc = async (contract, mappingTables) => {
         sub.sf_id = contract.sf_id;
         sub.location = await locationLookup({
             sf_loc: contract.sf_loc ? contract.sf_loc : null,
-            arr: mappingTables.arr,
+            arr_table: mappingTables.arr,
             subsid: contract.subsid,
             cc_id: contract.sf_id
         });
