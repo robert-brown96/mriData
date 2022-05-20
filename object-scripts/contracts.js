@@ -28,6 +28,7 @@ const { calc_next_ann_date } = require("../lib/dates/next-ann-date");
  * @property {String} charge_schedule
  * @property {String} sf_bp
  * @property {Number} evergreen_term
+ * @property {String} subsid
  */
 /**
  * @typedef {Object} NsSubscription
@@ -51,14 +52,16 @@ const contractQl = `SELECT
                         cc. "Next_Anniversary_Date__c" AS sf_next_ann,
                         cc. "Charge_Schedule__c" AS charge_schedule,
                         cc. "Billing_Profile__c" AS sf_bp,
-                        cc. "Auto_Renewal_Term_months__c" AS evergreen_term
+                        cc. "Auto_Renewal_Term_months__c" AS evergreen_term,
+                        sfa."Subsidiary__c" as subsid
                     FROM
                         sf_contract_containers cc
+                        LEFT JOIN sf_accounts sfa ON cc."Account__r.id" = sfa."Id"
                     WHERE
                         cc. "Id" NOT IN(
                             SELECT
                                 sf_id FROM trans_subscriptions)
-                    LIMIT 1000;`;
+                    LIMIT 10000;`;
 
 const arrQl = `SELECT
                 a. "Contract_Container__r.Id" AS cc_id,
@@ -98,6 +101,7 @@ const arrTable = async ({ dbs }) => {
  */
 const locationLookup = async ({ sf_loc, arr_table, cc_id, subsid }) => {
     try {
+        //    console.log(`loc ${sf_loc} cc is ${cc_id} sub is ${subsid}`);
         let loc;
         // return salesfroce location
         if (sf_loc) return sf_loc;
@@ -177,6 +181,12 @@ const transformFunc = async (contract, mappingTables) => {
         /** @type {NsSubscription} */
         let sub = {};
         sub.sf_id = contract.sf_id;
+        sub.location = await locationLookup({
+            sf_loc: contract.sf_loc ? contract.sf_loc : null,
+            arr: mappingTables.arr,
+            subsid: contract.subsid,
+            cc_id: contract.sf_id
+        });
         const datePromise = await new Promise(resolve => {
             sub.start_date = calc_start_date({
                 sf_start_date: contract.sf_start,
@@ -212,6 +222,7 @@ const streamer = async () => {
     try {
         const dbServ = new DbService();
         const arr = await arrTable({ dbs: dbServ });
+        //    console.log("arr " + JSON.stringify(arr[0]));
         await dbServ.etl({
             query: contractQl,
             transformFunc: transformFunc,
