@@ -60,7 +60,7 @@ const contractQl = `SELECT
                     WHERE
                         cc. "Id" NOT IN(
                             SELECT
-                                sf_id FROM trans_subscriptions) AND cc."Id" = 'a3E6S00001KuKRoUAN'
+                                sf_id FROM trans_subscriptions)
                     LIMIT 10000;`;
 
 const arrQl = `SELECT
