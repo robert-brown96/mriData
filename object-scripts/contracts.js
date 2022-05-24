@@ -53,7 +53,8 @@ const contractQl = `SELECT
                         cc. "Charge_Schedule__c" AS charge_schedule,
                         cc. "Billing_Profile__c" AS sf_bp,
                         cc. "Auto_Renewal_Term_months__c" AS evergreen_term,
-                        sfa."Subsidiary__c" as subsid
+                        sfa."Subsidiary__c" as subsid,
+                        cc."Legacy_MRI_Software_Id__c" as legacy_id
                     FROM
                         sf_contract_containers cc
                         LEFT JOIN sf_accounts sfa ON cc."Account__r.id" = sfa."Id"
@@ -187,7 +188,7 @@ const transformFunc = async (contract, mappingTables) => {
             subsid: contract.subsid,
             cc_id: contract.sf_id
         });
-        const datePromise = await new Promise(resolve => {
+        const datePromise = new Promise(resolve => {
             sub.start_date = calc_start_date({
                 sf_start_date: contract.sf_start,
                 sf_next_ann: contract.sf_next_ann
@@ -210,12 +211,38 @@ const transformFunc = async (contract, mappingTables) => {
             }
             resolve();
         });
+        const bpProm = new Promise(resolve => {
+            const foundBp = mappingTables.bpFeedback.find(
+                e => e.legacy_id === contract.legacy_id
+            );
+            if (foundBp) resolve(foundBp);
 
+            if (!contract.billing_prof) resolve("Bundled Fee to Parent");
+
+            if (contract.billing_prof === "Split by Contracting Group") {
+                const nonParentLocs = ["US-MRI"];
+                const toSiteLocs = [
+                    "US-RHR",
+                    "Canada-CallMax",
+                    "Canada-ProCalc",
+                    "Canada-Resident Check",
+                    "US-CallMax",
+                    "US-DLS",
+                    "US-IPM",
+                    "US-Resident Check"
+                ];
+                if (toSiteLocs.includes(sub.location)) resolve("Bill to Sites");
+                else if (!nonParentLocs.includes(sub.location))
+                    resolve("Bundled Fee to Parent");
+                else resolve();
+            } else resolve();
+        });
+        const [dateRes, bpRes] = await Promise.all([datePromise, bpProm]);
         sub.transformation_renew = isAfter(
             new Date(sub.next_ann),
             new Date(contract.sf_next_ann)
         );
-        sub.billing_prof = contract.sf_bp;
+        sub.billing_prof = bpRes ? bp : contract.billing_prof;
         return sub;
     } catch (e) {
         console.error(e);
@@ -226,6 +253,9 @@ const streamer = async () => {
     try {
         const dbServ = new DbService();
         const arr = await arrTable({ dbs: dbServ });
+        const bpFeedback = await dbServ.feedbackTable({
+            tableName: "billingProfileFeedback"
+        });
         //    console.log("arr " + JSON.stringify(arr[0]));
         await dbServ.etl({
             query: contractQl,
@@ -233,7 +263,8 @@ const streamer = async () => {
             tableName: "trans_subscriptions",
             conflict: "sf_id",
             mappingTables: {
-                arr: arr
+                arr: arr,
+                bpFeedback: bpFeedback
             }
         });
     } catch (e) {
