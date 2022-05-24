@@ -200,10 +200,14 @@ const transformFunc = async (contract, mappingTables) => {
             sub.next_anniversary = calc_next_ann_date({
                 sf_next_ann: contract.sf_next_ann
             });
-            sub.calculated_start = calc_bill_start_date({
-                charge_schedule: contract.charge_schedule,
-                sf_next_ann: contract.sf_next_ann
-            });
+            try {
+                sub.calculated_start = calc_bill_start_date({
+                    charge_schedule: contract.charge_schedule,
+                    sf_next_ann: contract.sf_next_ann
+                });
+            } catch (e) {
+                console.log("Billing start threw");
+            }
             resolve();
         });
 
