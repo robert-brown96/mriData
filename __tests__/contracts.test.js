@@ -154,3 +154,80 @@ describe("Test units for contracts transform", () => {
         expect(loctest).toEqual("Japan-MRI");
     });
 });
+
+describe("Tests Billing Profile Feedback", () => {
+    const testFeedback = [
+        {
+            legacy_id: "leg1",
+            input: "Bill to Parent, Split by Site"
+        },
+        {
+            legacy_id: "leg2",
+            input: "Bill to Parent, Split by Site"
+        },
+        {
+            legacy_id: "leg3",
+            input: "Bundled Fee to Parent, Site Level Detail"
+        }
+    ];
+    test("Returns based on legacy ref", () => {
+        const bpRes = Contract.bpLookup({
+            contract: { legacy_id: "leg3" },
+            bpFeedback: testFeedback
+        });
+        expect(bpRes).toEqual("Bundled Fee to Parent, Site Level Detail");
+    });
+    test("Returns existing on contract for MRI US", () => {
+        const bpRes = Contract.bpLookup({
+            contract: {
+                legacy_id: "leg4",
+                billing_prof: "Split by Contracting Group"
+            },
+            bpFeedback: testFeedback,
+            location: "US-MRI"
+        });
+        expect(bpRes).toEqual("Split by Contracting Group");
+    });
+    test("Returns Bill to Sites for CallMax", () => {
+        const bpRes = Contract.bpLookup({
+            contract: {
+                legacy_id: "leg4",
+                billing_prof: "Split by Contracting Group"
+            },
+            bpFeedback: testFeedback,
+            location: "US-CallMax"
+        });
+        expect(bpRes).toEqual("Bill to Sites");
+    });
+    test("Returns Bill to Sites for Resident Check", () => {
+        const bpRes = Contract.bpLookup({
+            contract: {
+                legacy_id: "leg4",
+                billing_prof: "Split by Contracting Group"
+            },
+            bpFeedback: testFeedback,
+            location: "US-Resident Check"
+        });
+        expect(bpRes).toEqual("Bill to Sites");
+    });
+    test("Returns Bundled Fee to Parent for Tenmast", () => {
+        const bpRes = Contract.bpLookup({
+            contract: {
+                billing_prof: "Split by Contracting Group"
+            },
+            bpFeedback: testFeedback,
+            location: "US-Tenmast"
+        });
+        expect(bpRes).toEqual("Bundled Fee to Parent");
+    });
+    test("Returns Bundled Fee to Parent for blank Billing Profile", () => {
+        const bpRes = Contract.bpLookup({
+            contract: {
+                billing_prof: ""
+            },
+            bpFeedback: testFeedback,
+            location: "US-MRI"
+        });
+        expect(bpRes).toEqual("Bundled Fee to Parent");
+    });
+});

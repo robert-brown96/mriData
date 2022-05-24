@@ -4,7 +4,9 @@
   "description": "",
   "main": "playground.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "subs": "node --max-old-space-size=8192 app.js --mode=subscription",
+    "data_load": "node ../zab-data-migration/main"
   },
   "repository": {
     "type": "git",

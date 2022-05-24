@@ -1,3 +1,4 @@
+const { streamer: runSubs } = require("./object-scripts/contracts");
 /**
  * @typedef {Object} argsObj
  *
@@ -19,5 +20,10 @@ switch (args.mode) {
                 `MISSING ARGUMENT. PATH=${args.path} -- TABLE=${args.table}`
             );
         console.log(args.path + " " + args.table);
+        break;
+    }
+    case "subscription": {
+        runSubs();
+        break;
     }
 }

@@ -62,7 +62,7 @@ const contractQl = `SELECT
                         cc. "Id" NOT IN(
                             SELECT
                                 sf_id FROM trans_subscriptions)
-                    LIMIT 10000;`;
+                    LIMIT 2000;`;
 
 const arrQl = `SELECT
                 a. "Contract_Container__r.Id" AS cc_id,
@@ -172,6 +172,36 @@ const locationLookup = async ({ sf_loc, arr_table, cc_id, subsid }) => {
     }
 };
 
+const bpLookup = ({ contract, bpFeedback, location }) => {
+    const nonParentLocs = ["US-MRI"];
+    const toSiteLocs = [
+        "US-RHR",
+        "Canada-CallMax",
+        "Canada-ProCalc",
+        "Canada-Resident Check",
+        "US-CallMax",
+        "US-DLS",
+        "US-IPM",
+        "US-Resident Check",
+        "US-ProCalc"
+    ];
+    if (contract.legacy_id) {
+        const foundBp = bpFeedback.find(
+            e => e.legacy_id === contract.legacy_id
+        );
+        if (foundBp) return foundBp.input;
+    }
+    if (
+        contract.billing_prof === "Split by Contracting Group" ||
+        !contract.billing_prof
+    ) {
+        if (nonParentLocs.includes(location))
+            return contract.billing_prof || "Bundled Fee to Parent";
+        else if (toSiteLocs.includes(location)) return "Bill to Sites";
+        else return "Bundled Fee to Parent";
+    }
+};
+
 /**
  *
  * @param {SfContract} contract
@@ -189,15 +219,25 @@ const transformFunc = async (contract, mappingTables) => {
             cc_id: contract.sf_id
         });
         const datePromise = new Promise(resolve => {
-            sub.start_date = calc_start_date({
-                sf_start_date: contract.sf_start,
-                sf_next_ann: contract.sf_next_ann
-            });
-            sub.end_date = calc_end_date({
-                calc_start: sub.start_date,
-                evergreen_term: contract.evergreen_term,
-                sf_end_date: contract.sf_end
-            });
+            try {
+                sub.start_date = calc_start_date({
+                    sf_start_date: contract.sf_start,
+                    sf_next_ann: contract.sf_next_ann
+                });
+            } catch (e) {
+                console.log("start date throws");
+                sub.start_date = null;
+            }
+            try {
+                sub.end_date = calc_end_date({
+                    calc_start: sub.start_date,
+                    evergreen_term: contract.evergreen_term,
+                    sf_end_date: contract.sf_end
+                });
+            } catch (e) {
+                console.log("End date threw");
+                sub.end_date = null;
+            }
             sub.next_anniversary = calc_next_ann_date({
                 sf_next_ann: contract.sf_next_ann
             });
@@ -208,41 +248,25 @@ const transformFunc = async (contract, mappingTables) => {
                 });
             } catch (e) {
                 console.log("Billing start threw");
+                sub.calculated_start = null;
             }
             resolve();
         });
         const bpProm = new Promise(resolve => {
-            const foundBp = mappingTables.bpFeedback.find(
-                e => e.legacy_id === contract.legacy_id
+            resolve(
+                bpLookup({
+                    contract: contract,
+                    bpFeedback: mappingTables.bpFeedback,
+                    location: sub.location
+                })
             );
-            if (foundBp) resolve(foundBp);
-
-            if (!contract.billing_prof) resolve("Bundled Fee to Parent");
-
-            if (contract.billing_prof === "Split by Contracting Group") {
-                const nonParentLocs = ["US-MRI"];
-                const toSiteLocs = [
-                    "US-RHR",
-                    "Canada-CallMax",
-                    "Canada-ProCalc",
-                    "Canada-Resident Check",
-                    "US-CallMax",
-                    "US-DLS",
-                    "US-IPM",
-                    "US-Resident Check"
-                ];
-                if (toSiteLocs.includes(sub.location)) resolve("Bill to Sites");
-                else if (!nonParentLocs.includes(sub.location))
-                    resolve("Bundled Fee to Parent");
-                else resolve();
-            } else resolve();
         });
         const [dateRes, bpRes] = await Promise.all([datePromise, bpProm]);
         sub.transformation_renew = isAfter(
             new Date(sub.next_ann),
             new Date(contract.sf_next_ann)
         );
-        sub.billing_prof = bpRes ? bp : contract.billing_prof;
+        sub.billing_prof = bpRes ? bpRes : contract.billing_prof;
         return sub;
     } catch (e) {
         console.error(e);
@@ -254,7 +278,7 @@ const streamer = async () => {
         const dbServ = new DbService();
         const arr = await arrTable({ dbs: dbServ });
         const bpFeedback = await dbServ.feedbackTable({
-            tableName: "billingProfileFeedback"
+            tableName: "bp_feedback"
         });
         //    console.log("arr " + JSON.stringify(arr[0]));
         await dbServ.etl({
@@ -272,4 +296,4 @@ const streamer = async () => {
     }
 };
 
-module.exports = { streamer, locationLookup };
+module.exports = { streamer, locationLookup, bpLookup };
