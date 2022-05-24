@@ -83,7 +83,7 @@ web_modules/
 .env.local
 
 # data load config
-data-load/zab-data-migration/config.json
+data-load/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
