@@ -84,6 +84,7 @@ web_modules/
 
 # data load config
 zab-data-migration/config.json
+zab-data-migration/.gitignore
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
