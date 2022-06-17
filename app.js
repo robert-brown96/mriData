@@ -1,4 +1,5 @@
 const { streamer: runSubs } = require("./object-scripts/contracts");
+const { streamer: runCus } = require("./object-scripts/customer");
 /**
  * @typedef {Object} argsObj
  *
@@ -24,6 +25,10 @@ switch (args.mode) {
     }
     case "subscription": {
         runSubs();
+        break;
+    }
+    case "customer": {
+        runCus();
         break;
     }
 }

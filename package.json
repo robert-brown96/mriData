@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest",
     "subs": "node --max-old-space-size=8192 app.js --mode=subscription",
+    "cus": "node --max-old-space-size=8192 app.js --mode=customer",
     "data_load": "node ../zab-data-migration/main"
   },
   "repository": {

@@ -63,23 +63,27 @@ const sfAccountQl = `SELECT
 const convert_multi_select = async (table, value) => {
     return await new Promise(resolve => {
         //    console.log(table);
-        const tableUse = table.reduce(
-            (o, key) => ({
-                ...o,
-                [key.name]: key.internal_id
-            }),
-            {}
-        );
-        let split = value.split(";");
-        let return_value = [];
-        for (let i = 0; i < split.length; i++) {
-            let t = split[i];
-            if (t) {
-                let temp = tableUse[t.trim()];
-                if (temp && temp !== "") return_value.push(temp);
+        try {
+            const tableUse = table.reduce(
+                (o, key) => ({
+                    ...o,
+                    [key.name]: key.internal_id
+                }),
+                {}
+            );
+            let split = value.split(";");
+            let return_value = [];
+            for (let i = 0; i < split.length; i++) {
+                let t = split[i];
+                if (t) {
+                    let temp = tableUse[t.trim()];
+                    if (temp && temp !== "") return_value.push(temp);
+                }
             }
+            resolve(return_value);
+        } catch (e) {
+            resolve();
         }
-        resolve(return_value);
     });
 };
 
@@ -138,8 +142,8 @@ const transformAccount = async (sfAccount, mappingTables) => {
         companyname: nameObj.companyname,
         name: nameObj.name,
         sf_id: sfAccount.sf_id,
-        client_type: client_type.join(","),
-        customer_class: [...rps, ...comps, ...corps].join(",")
+        client_type: client_type.join(",")
+        //     customer_class: [...rps, ...comps, ...corps].join(",")
     };
 };
 
